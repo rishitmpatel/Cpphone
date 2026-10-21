@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:;
+  font-src 'self';
+  connect-src 'self' https://wandbox.org;
+  worker-src 'self';
+  base-uri 'self';
+  form-action 'none';
+  object-src 'none';
+">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1e1e1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>CppPhone — C++</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-title" content="CppPhone">
+<style>
+/* ==================== THEMES ==================== */
+:root{
+  --bg:#1e1e1e; --panel:#252526; --panel2:#2d2d2d; --line:#3c3c3c;
+  --text:#d4d4d4; --muted:#858585; --accent:#007acc;
+  --btn:#0e639c; --run:#2ea043;
+
+  --syn-default:#d4d4d4; --syn-comment:#6a9955; --syn-string:#ce9178;
+  --syn-number:#b5cea8; --syn-keyword:#569cd6; --syn-control:#c586c0;
+  --syn-function:#dcdcaa; --syn-class:#4ec9b0; --syn-variable:#9cdcfe;
+  --caret:#aeafad;
+
+  --sheet-bg:#181818;
+  --gutter-fg:#6e7681; --gutter-bg:#1e1e1e; --gutter-border:#2a2a2a;
+  --output-fg:#cccccc; --sym-bg:#2a2d2e; --brand-fg:#cccccc;
+  --tab-close-hover:rgba(255,255,255,.08);
+
+  --fs:16px; --vvh:100dvh; --vvt:0px;
+}
+:root[data-theme="light"]{
+  --bg:#ffffff; --panel:#f3f3f3; --panel2:#e8e8e8; --line:#d4d4d4;
+  --text:#1f1f1f; --muted:#6e6e6e; --accent:#007acc;
+  --btn:#007acc; --run:#16825d;
+
+  --syn-default:#000000; --syn-comment:#008000; --syn-string:#a31515;
+  --syn-number:#098658; --syn-keyword:#0000ff; --syn-control:#af00db;
+  --syn-function:#795e26; --syn-class:#267f99; --syn-variable:#001080;
+  --caret:#000000;
+
+  --sheet-bg:#f3f3f3;
+  --gutter-fg:#237893; --gutter-bg:#ffffff; --gutter-border:#e0e0e0;
+  --output-fg:#1f1f1f; --sym-bg:#e8e8e8; --brand-fg:#333333;
+  --tab-close-hover:rgba(0,0,0,.08);
+}
+
+/* ==================== BASE ==================== */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--text);font-size:15px;
+  position:fixed;inset:0;overscroll-behavior:none;
+}
+#app{position:fixed;left:0;right:0;top:var(--vvt);height:var(--vvh);
+  display:flex;flex-direction:column;background:var(--bg);}
+
+/* ==================== TOP BAR ==================== */
+#topbar{flex:0 0 auto;height:50px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 8px 0 12px;
+  background:var(--panel);border-bottom:1px solid var(--line);}
+#brand{font-weight:600;font-size:15px;color:var(--brand-fg);
+  background:none;border:none;padding:2px 4px 2px 0;cursor:pointer;
+  font-family:inherit;text-align:left;line-height:1.15;}
+#brand em{font-style:normal;color:var(--syn-keyword);}
+#engineBadge{display:block;font-size:11px;font-weight:500;color:var(--muted);}
+#engineBadge.online{color:var(--syn-class);}
+#topActions{display:flex;align-items:center;gap:6px;}
+.iconBtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  width:40px;height:34px;border-radius:6px;font-size:16px;cursor:pointer;padding:0;}
+.iconBtn:active{background:var(--btn);color:#fff;}
+.runBtn{background:var(--run);color:#fff;border:none;font-weight:600;
+  height:34px;padding:0 16px;border-radius:6px;font-size:14px;cursor:pointer;}
+.runBtn:disabled{opacity:.5;}
+.runBtn.stop{background:#c93c37;}
+
+/* ==================== TAB BAR ==================== */
+#tabBar{
+  flex:0 0 auto;display:flex;overflow-x:auto;overflow-y:hidden;
+  background:var(--panel);border-bottom:1px solid var(--line);
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+#tabBar::-webkit-scrollbar{display:none;}
+.tab{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:8px 14px;font-size:13px;color:var(--muted);
+  background:var(--panel);border-right:1px solid var(--line);
+  cursor:pointer;white-space:nowrap;user-select:none;-webkit-user-select:none;
+  position:relative;
+}
+.tab.active{background:var(--bg);color:var(--text);}
+.tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;
+  height:1px;background:var(--bg);}
+.tab.active::before{content:"";position:absolute;left:0;right:0;top:0;
+  height:2px;background:var(--accent);}
+.tab .tabClose{opacity:.4;font-size:16px;line-height:1;padding:0 2px;border-radius:3px;}
+.tab .tabClose:hover{opacity:1;background:var(--tab-close-hover);}
+.tabAdd{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  min-width:40px;font-size:20px;color:var(--muted);
+  background:var(--panel);cursor:pointer;}
+.tabAdd:active{background:var(--panel2);}
+
+/* ==================== EDITOR WRAP ==================== */
+#editorWrap{flex:1 1 auto;min-height:0;position:relative;background:var(--bg);}
+
+#gutter{
+  position:absolute;left:0;top:0;bottom:0;width:46px;
+  overflow:hidden;z-index:3;background:var(--gutter-bg);
+  border-right:1px solid var(--gutter-border);
+  pointer-events:none;user-select:none;-webkit-user-select:none;
+}
+#gutterInner{
+  margin:0;padding:12px 8px 12px 0;text-align:right;
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:var(--fs);line-height:1.5;color:var(--gutter-fg);
+  white-space:pre;will-change:transform;
+}
+
+#highlight,#editor{
+  position:absolute;inset:0;margin:0;border:0;border-radius:0;
+  padding:12px 14px 12px 60px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size:var(--fs);line-height:1.5;letter-spacing:0;
+  tab-size:4;-moz-tab-size:4;white-space:pre;
+  word-wrap:normal;overflow-wrap:normal;
+}
+#highlight{z-index:1;overflow:hidden;pointer-events:none;
+  color:var(--syn-default);background:var(--bg);}
+#editor{z-index:2;overflow:auto;resize:none;outline:none;
+  background:transparent;color:transparent;
+  -webkit-text-fill-color:transparent;caret-color:var(--caret);
+  -webkit-appearance:none;appearance:none;-webkit-overflow-scrolling:touch;}
+#editor::selection{background:rgba(38,79,120,.7);color:transparent;
+  -webkit-text-fill-color:transparent;}
+
+.com{color:var(--syn-comment);} .str{color:var(--syn-string);}
+.num{color:var(--syn-number);}  .kw {color:var(--syn-keyword);}
+.cf {color:var(--syn-control);} .fn {color:var(--syn-function);}
+.cls{color:var(--syn-class);}   .var{color:var(--syn-variable);}
+.op {color:var(--syn-default);} .dec{color:var(--syn-function);}
+.bi {color:var(--syn-function);}
+
+/* ==================== CHIP BARS ==================== */
+#suggestBar{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:5px;padding:6px 8px;
+  background:var(--panel);border-top:1px solid var(--line);
+  max-height:88px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  align-content:flex-start;}
+#symbolBar{flex:0 0 auto;display:flex;gap:5px;padding:6px 8px;
+  padding-bottom:calc(6px + env(safe-area-inset-bottom));
+  background:var(--panel2);border-top:1px solid var(--line);
+  overflow-x:auto;overflow-y:hidden;white-space:nowrap;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;}
+#symbolBar::-webkit-scrollbar{display:none;}
+.chip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  min-width:36px;height:33px;padding:0 10px;border-radius:6px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;
+  cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap;}
+#symbolBar .chip{background:var(--sym-bg);}
+.chip:active{background:var(--btn);color:#fff;border-color:var(--btn);}
+.chip.kw {color:var(--syn-keyword);} .chip.bi{color:var(--syn-function);}
+.chip.mod{color:var(--syn-class);} .chip.usr{color:var(--syn-variable);}
+.chip.mth{color:var(--syn-variable);}
+
+/* ==================== OUTPUT SHEET ==================== */
+#sheet{position:absolute;left:0;right:0;bottom:0;height:58%;
+  background:var(--sheet-bg);border-top:1px solid var(--line);
+  transform:translateY(105%);transition:transform .22s ease;
+  display:flex;flex-direction:column;z-index:60;
+  border-radius:10px 10px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.65);}
+#sheet.open{transform:translateY(0);}
+#sheetHead{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;border-bottom:1px solid var(--line);
+  font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;flex:0 0 auto;}
+.grp{display:flex;gap:6px;}
+.smallBtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  border-radius:5px;padding:5px 11px;font-size:12px;cursor:pointer;}
+.smallBtn:active{background:var(--btn);color:#fff;}
+#output{flex:1;margin:0;padding:10px 14px;overflow:auto;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;color:var(--output-fg);
+  -webkit-overflow-scrolling:touch;}
+#output .err{color:#f48771;} #output .info{color:var(--muted);}
+
+#scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;
+  pointer-events:none;transition:opacity .22s;z-index:55;}
+#scrim.show{opacity:1;pointer-events:auto;}
+
+/* ==================== MODAL ==================== */
+#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  z-index:200;padding:16px;background:rgba(0,0,0,.7);}
+#modal.open{display:flex;}
+#modalCard{width:100%;max-width:400px;max-height:82vh;overflow:auto;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:6px;-webkit-overflow-scrolling:touch;}
+.mItem{display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-radius:6px;cursor:pointer;font-size:14px;}
+.mItem:active{background:var(--panel2);}
+.mHead{padding:14px 14px 6px;font-size:11px;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--muted);font-weight:700;}
+.mText{padding:4px 14px 14px;font-size:13.5px;line-height:1.6;color:var(--muted);}
+.mText code{background:var(--panel2);padding:1px 5px;border-radius:3px;
+  font-size:12.5px;color:var(--syn-string);}
+.mItem.sel{color:var(--syn-class);}
+.mInput{width:100%;padding:8px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:5px;color:var(--text);font-family:inherit;font-size:14px;}
+textarea.mInput{height:140px;font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:var(--fs);resize:vertical;}
+</style>
+<script>
+/* Theme applied before paint to avoid flash */
+(function(){
+  try {
+    var t = localStorage.getItem('cppphone.theme.v1') || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch(e){}
+})();
+</script>
+</head>
+<body>
+
+<div id="app">
+  <header id="topbar">
+    <button id="brand" title="Switch C++ engine"><em>C++</em>Phone
+      <span id="engineBadge"></span></button>
+    <div id="topActions">
+      <button id="btnUndo" class="iconBtn" title="Undo">↶</button>
+      <button id="btnRedo" class="iconBtn" title="Redo">↷</button>
+      <button id="btnKeyboard" class="iconBtn" title="Hide keyboard">⌄</button>
+      <button id="btnMenu" class="iconBtn" title="Menu">☰</button>
+      <button id="btnRun" class="runBtn">▶ Run</button>
+    </div>
+  </header>
+
+  <div id="tabBar"></div>
+
+  <main id="editorWrap">
+    <div id="gutter"><pre id="gutterInner"></pre></div>
+    <pre id="highlight" aria-hidden="true"></pre>
+    <textarea id="editor" spellcheck="false" autocapitalize="off"
+      autocorrect="off" autocomplete="off" wrap="off"
+      aria-label="C++ code editor"></textarea>
+  </main>
+
+  <div id="suggestBar"></div>
+  <div id="symbolBar"></div>
+
+  <div id="scrim"></div>
+  <div id="sheet">
+    <div id="sheetHead">
+      <span id="sheetTitle">Output</span>
+      <div class="grp">
+        <button class="smallBtn" id="btnClearOut">Clear</button>
+        <button class="smallBtn" id="btnCloseOut">✕</button>
+      </div>
+    </div>
+    <pre id="output"></pre>
+  </div>
+</div>
+
+<div id="modal"><div id="modalCard"></div></div>
+<input type="file" id="fileInput" accept=".cpp,.cc,.cxx,.c,.h,.hpp,.txt,text/plain" style="display:none">
+
+<script>
+"use strict";
+
+/* ==================== DATA ==================== */
+const CPP_KEYWORDS_BLUE = new Set(['int','long','short','char','bool','float',
+  'double','void','auto','signed','unsigned','const','constexpr','static',
+  'extern','inline','volatile','mutable','class','struct','union','enum',
+  'namespace','using','typedef','typename','template','public','private',
+  'protected','virtual','override','final','friend','operator','this','true',
+  'false','nullptr','sizeof','new','delete','explicit','noexcept','decltype',
+  'static_cast','dynamic_cast','const_cast','reinterpret_cast','size_t',
+  'wchar_t','char16_t','char32_t','NULL']);
+const CPP_KEYWORDS_PURPLE = new Set(['if','else','for','while','do','switch',
+  'case','default','return','break','continue','goto','try','catch','throw']);
+const CPP_STD_TYPES = new Set(['std','string','vector','map','set',
+  'unordered_map','unordered_set','pair','tuple','array','deque','list',
+  'queue','stack','priority_queue','stringstream','istringstream',
+  'ostringstream','ifstream','ofstream','fstream','istream','ostream',
+  'optional','function','bitset','multiset','multimap','unique_ptr',
+  'shared_ptr']);
+const CPP_BUILTINS_SET = new Set(['cout','cin','cerr','endl','printf','scanf',
+  'puts','getline','getchar','putchar','main','max','min','swap','sort',
+  'reverse','abs','sqrt','pow','floor','ceil','round','strlen','strcpy',
+  'strcmp','memset','rand','srand','time','to_string','stoi','stod',
+  'make_pair','accumulate','find','count','lower_bound','upper_bound','setw',
+  'setprecision','fixed','exit','malloc','free']);
+const CPP_HEADERS = ['iostream','string','vector','algorithm','cmath','cstdio',
+  'cstdlib','cstring','map','set','unordered_map','unordered_set','queue',
+  'stack','deque','list','utility','numeric','sstream','iomanip','fstream',
+  'functional','memory','array','tuple','bitset','climits','ctime','cctype',
+  'random','chrono','optional','bits/stdc++.h'];
+const CPP_METHODS = [...new Set(['push_back','pop_back','emplace_back','size',
+  'empty','clear','begin','end','rbegin','rend','front','back','insert',
+  'erase','find','count','at','resize','reserve','assign','swap','length',
+  'substr','append','c_str','compare','replace','push','pop','top',
+  'emplace','first','second','lower_bound','upper_bound','contains','data',
+  'get','reset','str','fill','push_front','pop_front','precision','width'])];
+
+const SNIPPETS = [
+  {label:'main',       text:'#include <iostream>\nusing namespace std;\n\nint main() {\n    |\n    return 0;\n}\n'},
+  {label:'cout',       text:'cout << | << endl;'},
+  {label:'cin',        text:'cin >> |;'},
+  {label:'#include',   text:'#include <|>'},
+  {label:'if',         text:'if (|) {\n    \n}'},
+  {label:'else if',    text:'else if (|) {\n    \n}'},
+  {label:'else',       text:'else {\n    |\n}'},
+  {label:'for i',      text:'for (int i = 0; i < |; i++) {\n    \n}'},
+  {label:'for each',   text:'for (auto &x : |) {\n    \n}'},
+  {label:'while',      text:'while (|) {\n    \n}'},
+  {label:'do while',   text:'do {\n    |\n} while ();'},
+  {label:'switch',     text:'switch (|) {\n    case 0:\n        break;\n    default:\n        break;\n}'},
+  {label:'function',   text:'int |() {\n    return 0;\n}'},
+  {label:'class',      text:'class | {\npublic:\n    \n};'},
+  {label:'struct',     text:'struct | {\n    \n};'},
+  {label:'return',     text:'return |;'},
+  {label:'vector',     text:'vector<int> |;'},
+  {label:'string',     text:'string |;'},
+  {label:'printf',     text:'printf("|\\n");'},
+  {label:'scanf',      text:'scanf("%d", &|);'},
+  {label:'try',        text:'try {\n    |\n} catch (const exception &e) {\n    cout << e.what() << endl;\n}'},
+  {label:'endl',       text:'endl'},{label:'auto',text:'auto '},
+  {label:'const',      text:'const '},{label:'nullptr',text:'nullptr'},
+  {label:'true',       text:'true'},{label:'false',text:'false'},
+];
+
+const SYMBOLS = [
+  {l:'⇥',a:'indent'},{l:'⇤',a:'unindent'},{l:'⏎',t:'\n'},{l:';',t:';'},
+  {l:'{',t:'{}',pair:'}',caret:1},{l:'}',t:'}'},
+  {l:'(',t:'()',pair:')',caret:1},{l:')',t:')'},
+  {l:'[',t:'[]',pair:']',caret:1},{l:']',t:']'},
+  {l:'"',t:'""',pair:'"',caret:1},{l:"'",t:"''",pair:"'",caret:1},
+  {l:'<<',t:' << '},{l:'>>',t:' >> '},{l:'<',t:'<'},{l:'>',t:'>'},
+  {l:'=',t:' = '},{l:'==',t:' == '},{l:'!=',t:' != '},
+  {l:'<=',t:' <= '},{l:'>=',t:' >= '},
+  {l:'+',t:' + '},{l:'-',t:' - '},{l:'*',t:'*'},{l:'/',t:' / '},{l:'%',t:' % '},
+  {l:'++',t:'++'},{l:'&',t:'&'},{l:'&&',t:' && '},{l:'||',t:' || '},{l:'!',t:'!'},
+  {l:'::',t:'::'},{l:'->',t:'->'},{l:'.',t:'.'},{l:',',t:', '},{l:'#',t:'#'},
+  {l:'_',t:'_'},{l:'//',t:'// '},{l:'\\n',t:'\\n'},
+];
+
+const DEFAULT_CODE =
+`// Welcome to CppPhone ⚙️
+// Tap ▶ Run. Use the chips below to type fast.
+// Tap "C++Phone" at the top to switch offline / online (real g++).
+
+#include <iostream>
+using namespace std;
+
+int square(int x) {
+    return x * x;
+}
+
+int main() {
+    cout << "Hello, world!" << endl;
+    for (int i = 0; i < 5; i++) {
+        cout << i << " " << square(i) << endl;
+    }
+    return 0;
+}
+`;
+
+/* "online: true" = uses std::string, the STL or classes, which the offline
+   interpreter cannot run. */
+const EXAMPLES = {
+'Hello + input': { code: `#include <iostream>
+using namespace std;
+
+int main() {
+    int age;
+    cout << "How old are you? ";
+    cin >> age;
+    cout << endl << "In 10 years you will be " << age + 10 << "." << endl;
+    return 0;
+}
+`, stdin: '16' },
+'FizzBuzz': { code: `#include <iostream>
+using namespace std;
+
+int main() {
+    for (int n = 1; n <= 20; n++) {
+        if (n % 15 == 0) cout << "FizzBuzz" << endl;
+        else if (n % 3 == 0) cout << "Fizz" << endl;
+        else if (n % 5 == 0) cout << "Buzz" << endl;
+        else cout << n << endl;
+    }
+    return 0;
+}
+` },
+'Fibonacci (recursion)': { code: `#include <iostream>
+using namespace std;
+
+int fib(int n) {
+    if (n < 2) return n;
+    return fib(n - 1) + fib(n - 2);
+}
+
+int main() {
+    for (int i = 0; i < 15; i++) {
+        cout << fib(i) << " ";
+    }
+    cout << endl;
+    return 0;
+}
+` },
+'Arrays & pointers': { code: `#include <cstdio>
+
+void bubbleSort(int *a, int n) {
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - 1 - i; j++)
+            if (a[j] > a[j + 1]) {
+                int t = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = t;
+            }
+}
+
+int main() {
+    int nums[8] = {42, 7, 19, 3, 88, 25, 61, 10};
+    bubbleSort(nums, 8);
+    for (int i = 0; i < 8; i++) printf("%d ", nums[i]);
+    printf("\\n");
+    double avg = 0;
+    for (int *p = nums; p < nums + 8; p++) avg += *p;
+    printf("average = %.2f\\n", avg / 8);
+    return 0;
+}
+` },
+'Strings & vectors': { online: true, code: `#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+int main() {
+    vector<string> fruits = {"cherry", "apple", "banana"};
+    fruits.push_back("date");
+    sort(fruits.begin(), fruits.end());
+    for (const string &f : fruits) {
+        cout << f << " has " << f.size() << " letters" << endl;
+    }
+    return 0;
+}
+` },
+'Classes': { online: true, code: `#include <iostream>
+#include <string>
+using namespace std;
+
+class Animal {
+public:
+    Animal(string name, string sound) : name(name), sound(sound) {}
+    virtual ~Animal() {}
+    string speak() const { return name + " says " + sound; }
+protected:
+    string name, sound;
+};
+
+class Dog : public Animal {
+public:
+    Dog(string name) : Animal(name, "Woof") {}
+};
+
+int main() {
+    Dog d("Rex");
+    cout << d.speak() << endl;
+    return 0;
+}
+` },
+'Map word count': { online: true, code: `#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+using namespace std;
+
+int main() {
+    string text = "the cat and the dog and the bird";
+    map<string, int> counts;
+    stringstream ss(text);
+    string word;
+    while (ss >> word) counts[word]++;
+    for (auto &[w, c] : counts) cout << w << ": " << c << endl;
+    return 0;
+}
+` },
+};
+
+/* ==================== DOM ==================== */
+const editor      = document.getElementById('editor');
+const highlightEl = document.getElementById('highlight');
+const gutterInner = document.getElementById('gutterInner');
+const suggestBar  = document.getElementById('suggestBar');
+const symbolBar   = document.getElementById('symbolBar');
+const outputEl    = document.getElementById('output');
+const sheet       = document.getElementById('sheet');
+const scrim       = document.getElementById('scrim');
+const modal       = document.getElementById('modal');
+const modalCard   = document.getElementById('modalCard');
+const btnRun      = document.getElementById('btnRun');
+const fileInput   = document.getElementById('fileInput');
+
+const engineBadge = document.getElementById('engineBadge');
+const sheetTitle  = document.getElementById('sheetTitle');
+
+const STORE_FILES    = 'cppphone.files.v1';
+const STORE_ACTIVE   = 'cppphone.active.v1';
+const STORE_FONT     = 'cppphone.font.v1';
+const STORE_THEME    = 'cppphone.theme.v1';
+const STORE_SNIPPETS = 'cppphone.customsnippets.v1';
+const STORE_ENGINE   = 'cppphone.engine.v1';
+const STORE_STD      = 'cppphone.std.v1';
+
+/* ==================== VIEWPORT ==================== */
+function updateViewport(){
+  const vv = window.visualViewport;
+  if (!vv) return;
+  document.documentElement.style.setProperty('--vvh', vv.height + 'px');
+  document.documentElement.style.setProperty('--vvt', vv.offsetTop + 'px');
+}
+if (window.visualViewport){
+  window.visualViewport.addEventListener('resize', updateViewport);
+  window.visualViewport.addEventListener('scroll', () => {
+    updateViewport(); window.scrollTo(0, 0);
+  });
+}
+window.addEventListener('orientationchange', () => setTimeout(updateViewport, 250));
+updateViewport();
+
+/* ==================== HIGHLIGHTER (main-thread fallback) ==================== */
+const HTML_ESCAPES = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => HTML_ESCAPES[c]);
+}
+const TOKEN_RE = new RegExp(
+  '(?<comment>//[^\\n]*|/\\*[\\s\\S]*?(?:\\*/|(?![\\s\\S])))' +
+  '|(?<preproc>^[ \\t]*#[ \\t]*[A-Za-z_]\\w*)' +
+  '|(?<header>(?<=#[ \\t]*include[ \\t]*)<[^>\\n]*>)' +
+  '|(?<string>R"(?<rawtag>[^(\\s]*)\\([\\s\\S]*?\\)\\k<rawtag>"|(?:u8|[uUL])?"(?:\\\\.|[^"\\\\\\n])*"|(?:u8|[uUL])?\'(?:\\\\.|[^\'\\\\\\n])*\')' +
+  '|(?<number>\\b(?:0[xX][0-9a-fA-F\']+|0[bB][01\']+|\\d[\\d\']*(?:\\.\\d[\\d\']*)?(?:[eE][+-]?\\d+)?)[uUlLfF]*)' +
+  '|(?<word>[A-Za-z_]\\w*)' +
+  '|(?<op>[+\\-*/%=<>!&|^~?:]+)' +
+  '|(?<punct>[(){}\\[\\],.;])',
+  'gm'
+);
+
+function highlightCpp(code){
+  const tokens = [];
+  let last = 0, m;
+  TOKEN_RE.lastIndex = 0;
+  while ((m = TOKEN_RE.exec(code)) !== null){
+    if (m[0] === ''){ TOKEN_RE.lastIndex++; continue; }
+    if (m.index > last) tokens.push({ t:'plain', v: code.slice(last, m.index) });
+    const g = m.groups;
+    let kind = 'plain';
+    if (g.comment !== undefined) kind = 'comment';
+    else if (g.preproc !== undefined) kind = 'preproc';
+    else if (g.header !== undefined) kind = 'string';
+    else if (g.string !== undefined) kind = 'string';
+    else if (g.number !== undefined) kind = 'number';
+    else if (g.word !== undefined) kind = 'word';
+    else if (g.op !== undefined) kind = 'op';
+    else if (g.punct !== undefined) kind = 'punct';
+    tokens.push({ t: kind, v: m[0] });
+    last = m.index + m[0].length;
+  }
+  if (last < code.length) tokens.push({ t:'plain', v: code.slice(last) });
+
+  let html = '', prevWord = '';
+  for (let i = 0; i < tokens.length; i++){
+    const tk = tokens[i];
+    if (tk.t === 'word'){
+      let j = i + 1;
+      while (j < tokens.length && tokens[j].t === 'plain') j++;
+      const nx = tokens[j];
+      const isCall = nx && nx.v.charAt(0) === '(';
+      let cls;
+      if (prevWord === 'class' || prevWord === 'struct' || prevWord === 'enum') cls = 'cls';
+      else if (CPP_KEYWORDS_BLUE.has(tk.v)) cls = 'kw';
+      else if (CPP_KEYWORDS_PURPLE.has(tk.v)) cls = 'cf';
+      else if (CPP_STD_TYPES.has(tk.v)) cls = 'cls';
+      else if (CPP_BUILTINS_SET.has(tk.v)) cls = 'bi';
+      else if (isCall) cls = 'fn';
+      else cls = 'var';
+      html += '<span class="' + cls + '">' + esc(tk.v) + '</span>';
+      prevWord = tk.v;
+    }
+    else if (tk.t === 'comment') html += '<span class="com">' + esc(tk.v) + '</span>';
+    else if (tk.t === 'preproc') html += '<span class="cf">'  + esc(tk.v) + '</span>';
+    else if (tk.t === 'string')  html += '<span class="str">' + esc(tk.v) + '</span>';
+    else if (tk.t === 'number')  html += '<span class="num">' + esc(tk.v) + '</span>';
+    else if (tk.t === 'op')      html += '<span class="op">'  + esc(tk.v) + '</span>';
+    else                         html += esc(tk.v);
+  }
+  return html;
+}
+
+
+/* ==================== WEB WORKER ==================== */
+let hlWorker = null;
+let hlWorkerJobId = 0;
+let hlWorkerLastId = 0;
+let hlWorkerFallback = false;
+
+try {
+  hlWorker = new Worker('worker.js');
+  hlWorker.onerror = function(){
+    hlWorkerFallback = true;
+    hlWorker = null;
+  };
+  hlWorker.onmessage = function(e){
+    const { id, html, ok } = e.data;
+    if (id !== hlWorkerLastId || !ok) return;
+    highlightEl.innerHTML = html + '\u200b';
+    highlightEl.scrollTop  = editor.scrollTop;
+    highlightEl.scrollLeft = editor.scrollLeft;
+  };
+} catch(e){
+  hlWorkerFallback = true;
+  hlWorker = null;
+}
+
+function requestHighlight(text){
+  hlWorkerJobId++;
+  hlWorkerLastId = hlWorkerJobId;
+  hlWorker.postMessage({ id: hlWorkerJobId, code: text });
+}
+
+/* ==================== GUTTER + HIGHLIGHT ==================== */
+let lastLineCount = -1;
+let lastHighlightedText = null;
+let hlQueued = false;
+let hlLastRun = 0;
+const HL_MIN_INTERVAL_LARGE = 50;
+const HL_LARGE_THRESHOLD = 20000;
+
+function updateGutter(){
+  const text = editor.value;
+  let lines = 1;
+  for (let i = 0; i < text.length; i++){
+    if (text.charCodeAt(i) === 10) lines++;
+  }
+  if (lines !== lastLineCount){
+    let s = '';
+    for (let i = 1; i <= lines; i++) s += i + '\n';
+    gutterInner.textContent = s;
+    lastLineCount = lines;
+  }
+  gutterInner.style.transform = 'translateY(' + (-editor.scrollTop) + 'px)';
+}
+
+function scheduleHighlight(){
+  if (hlQueued) return;
+  hlQueued = true;
+
+  const now = performance.now();
+  const interval = editor.value.length > HL_LARGE_THRESHOLD
+    ? HL_MIN_INTERVAL_LARGE : 0;
+  const wait = Math.max(0, interval - (now - hlLastRun));
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      hlQueued = false;
+      hlLastRun = performance.now();
+      updateGutter();
+
+      if (editor.value === lastHighlightedText) return;
+      lastHighlightedText = editor.value;
+
+      if (hlWorkerFallback || !hlWorker){
+        highlightEl.innerHTML = highlightCpp(editor.value) + '\u200b';
+        highlightEl.scrollTop  = editor.scrollTop;
+        highlightEl.scrollLeft = editor.scrollLeft;
+      } else {
+        requestHighlight(editor.value);
+      }
+    }, wait);
+  });
+}
+editor.addEventListener('scroll', () => {
+  highlightEl.scrollTop  = editor.scrollTop;
+  highlightEl.scrollLeft = editor.scrollLeft;
+  gutterInner.style.transform = 'translateY(' + (-editor.scrollTop) + 'px)';
+}, { passive:true });
+
+/* ==================== EDITOR PRIMITIVES ==================== */
+let suppressAutoClose = false;
+
+function focusEditor(){
+  if (document.activeElement !== editor) editor.focus({ preventScroll:true });
+}
+function insertRaw(text, caretOffset){
+  suppressAutoClose = true;
+  try {
+    focusEditor();
+    const start = editor.selectionStart;
+    let ok = false;
+    try { ok = document.execCommand('insertText', false, text); } catch(e){ ok = false; }
+    if (!ok){
+      const v = editor.value, e = editor.selectionEnd;
+      editor.value = v.slice(0, start) + text + v.slice(e);
+      editor.setSelectionRange(start + text.length, start + text.length);
+    }
+    if (caretOffset !== undefined){
+      const p = start + caretOffset;
+      try { editor.setSelectionRange(p, p); } catch(e){}
+    }
+  } finally {
+    suppressAutoClose = false;
+  }
+  onEditorChange();
+}
+function replaceRange(start, end, text, caretOffset){
+  suppressAutoClose = true;
+  try {
+    focusEditor();
+    try { editor.setSelectionRange(start, end); } catch(e){}
+    let ok = false;
+    try { ok = document.execCommand('insertText', false, text); } catch(e){ ok = false; }
+    if (!ok){
+      const v = editor.value;
+      editor.value = v.slice(0, start) + text + v.slice(end);
+    }
+    const p = start + (caretOffset === undefined ? text.length : caretOffset);
+    try { editor.setSelectionRange(p, p); } catch(e){}
+  } finally {
+    suppressAutoClose = false;
+  }
+  onEditorChange();
+}
+function insertSnippet(snippet){
+  focusEditor();
+  const start = editor.selectionStart;
+  const before = editor.value.slice(0, start);
+  const lineStart = before.lastIndexOf('\n') + 1;
+  const lineIndent = (before.slice(lineStart).match(/^[ \t]*/) || [''])[0];
+  const PH = '\u0000';
+  const hasMarker = snippet.indexOf('|') !== -1;
+  const raw = hasMarker ? snippet.replace('|', PH) : snippet + PH;
+  const indented = raw.split('\n').map((line, i) => {
+    if (i === 0 || line.trim() === '') return line;
+    return lineIndent + line;
+  }).join('\n');
+  const caret = indented.indexOf(PH);
+  const finalText = indented.replace(PH, '');
+  insertRaw(finalText, caret < 0 ? finalText.length : caret);
+}
+function indent(){ insertRaw('    '); }
+function unindent(){
+  const pos = editor.selectionStart, v = editor.value;
+  const ls = v.lastIndexOf('\n', pos - 1) + 1;
+  const m = v.slice(ls, ls + 4).match(/^ +/);
+  if (!m) return;
+  const n = Math.min(m[0].length, 4);
+  editor.value = v.slice(0, ls) + v.slice(ls + n);
+  const np = Math.max(ls, pos - n);
+  focusEditor();
+  editor.setSelectionRange(np, np);
+  onEditorChange();
+}
+
+/* ==================== KEYBOARD ==================== */
+function autoIndentNewline(){
+  const pos = editor.selectionStart;
+  const before = editor.value.slice(0, pos);
+  const line = before.slice(before.lastIndexOf('\n') + 1);
+  const ind = (line.match(/^[ \t]*/) || [''])[0];
+  const code = line.replace(/\/\/.*$/, '').trimEnd();
+  /* Enter between { and }: open the block and put } on its own line. */
+  if (/\{$/.test(code) && editor.value[pos] === '}'){
+    insertRaw('\n' + ind + '    ' + '\n' + ind, 1 + ind.length + 4);
+    return;
+  }
+  let extra = '';
+  if (/[{(\[]$/.test(code)) extra = '    ';
+  /* Label lines like "public:" and "case 1:" indent the next line too. */
+  else if (/^\s*(?:public|private|protected|case\b.*|default)\s*:$/.test(code)) extra = '    ';
+  insertRaw('\n' + ind + extra);
+}
+
+/* Typing } on a line that is only spaces: pull it back one level. */
+function dedentForCloser(){
+  const pos = editor.selectionStart;
+  const v = editor.value;
+  const ls = v.lastIndexOf('\n', pos - 1) + 1;
+  const lead = v.slice(ls, pos);
+  if (!/^ +$/.test(lead)) return false;
+  const keep = Math.max(0, lead.length - 4);
+  replaceRange(ls, pos, ' '.repeat(keep) + '}');
+  return true;
+}
+
+editor.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey){
+    e.preventDefault();
+    autoIndentNewline();
+    return;
+  }
+  if (e.key === 'Tab'){ e.preventDefault(); insertRaw('    '); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); runCode(); }
+});
+
+/* ==================== BRACKET AUTO-CLOSE ==================== */
+const PAIRS   = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
+const CLOSERS = new Set([')', ']', '}', '"', "'"]);
+
+editor.addEventListener('beforeinput', (e) => {
+  if (suppressAutoClose) return;
+
+  /* Soft keyboards (Gboard etc.) often send key "Unidentified" on Enter, so
+     keydown never sees it. beforeinput always reports the line break. */
+  if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph'){
+    e.preventDefault();
+    autoIndentNewline();
+    return;
+  }
+
+  if (e.inputType === 'insertText' && e.data && e.data.length === 1){
+    const ch = e.data;
+    const pos = editor.selectionStart;
+    const end = editor.selectionEnd;
+
+    if (CLOSERS.has(ch) && pos === end && editor.value[pos] === ch){
+      e.preventDefault();
+      focusEditor();
+      editor.setSelectionRange(pos + 1, pos + 1);
+      onEditorChange();
+      return;
+    }
+    if (ch === '}' && pos === end){
+      e.preventDefault();
+      if (!dedentForCloser()) insertRaw('}');
+      return;
+    }
+    if (PAIRS[ch]){
+      if (editor.value[pos] === PAIRS[ch] && pos === end){
+        e.preventDefault();
+        focusEditor();
+        editor.setSelectionRange(pos + 1, pos + 1);
+        onEditorChange();
+        return;
+      }
+      /* Quote right after a word char is likely a digit separator (1'000). */
+      if ((ch === '"' || ch === "'") && pos > 0){
+        const prev = editor.value[pos - 1];
+        if (/[A-Za-z0-9_]/.test(prev)) return;
+      }
+      if (pos !== end){
+        e.preventDefault();
+        const sel = editor.value.slice(pos, end);
+        replaceRange(pos, end, ch + sel + PAIRS[ch], 1 + sel.length);
+        return;
+      }
+      e.preventDefault();
+      insertRaw(ch + PAIRS[ch], 1);
+      return;
+    }
+  }
+
+  if (e.inputType === 'deleteContentBackward'){
+    const pos = editor.selectionStart;
+    const end = editor.selectionEnd;
+    if (pos !== end || pos === 0) return;
+    const prev = editor.value[pos - 1];
+    const next = editor.value[pos];
+    if (PAIRS[prev] && PAIRS[prev] === next){
+      e.preventDefault();
+      replaceRange(pos - 1, pos + 1, '', 0);
+      return;
+    }
+  }
+});
+
+/* ==================== FUZZY MATCH ==================== */
+function fuzzyScore(query, target){
+  if (!query) return 1;
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+  if (t.startsWith(q)) return 1000 - target.length;
+
+  let qi = 0, score = 0, lastMatch = -1;
+  for (let i = 0; i < t.length && qi < q.length; i++){
+    if (t[i] !== q[qi]) continue;
+    if (lastMatch === i - 1) score += 15;
+    if (i === 0 ||
+        target[i - 1] === '_' ||
+        (target[i] === target[i].toUpperCase() &&
+         target[i] !== target[i].toLowerCase() &&
+         target[i - 1] !== target[i - 1].toUpperCase())){
+      score += 8;
+    }
+    score += Math.max(0, 6 - i);
+    lastMatch = i;
+    qi++;
+  }
+  if (qi < q.length) return -1;
+  return score - target.length * 0.1;
+}
+
+/* ==================== SCOPE-AWARE USER NAMES ==================== */
+/* Blank out comments, strings and char literals so they don't yield fake names. */
+function stripCppNoise(src){
+  let out = '', i = 0, mode = 'code';
+  while (i < src.length){
+    const c = src[i], n = src[i + 1];
+    if (mode === 'code'){
+      if (c === '/' && n === '/'){ mode = 'line'; out += '  '; i += 2; continue; }
+      if (c === '/' && n === '*'){ mode = 'block'; out += '  '; i += 2; continue; }
+      if (c === '"' || c === "'"){ mode = c; out += ' '; i++; continue; }
+      out += c; i++;
+    } else if (mode === 'line'){
+      if (c === '\n') mode = 'code';
+      out += (c === '\n' ? '\n' : ' '); i++;
+    } else if (mode === 'block'){
+      if (c === '*' && n === '/'){ mode = 'code'; out += '  '; i += 2; continue; }
+      out += (c === '\n' ? '\n' : ' '); i++;
+    } else {
+      if (c === '\\'){ out += '  '; i += 2; continue; }
+      if (c === mode || c === '\n') mode = 'code';
+      out += (c === '\n' ? '\n' : ' '); i++;
+    }
+  }
+  return out;
+}
+
+const DECL_SKIP = new Set([...CPP_KEYWORDS_BLUE, ...CPP_KEYWORDS_PURPLE]);
+
+function getUserNames(){
+  const stripped = stripCppNoise(editor.value);
+  const cursor = editor.selectionStart;
+  const names = new Map();
+  function add(name, at){
+    if (!DECL_SKIP.has(name) && !names.has(name)) names.set(name, at);
+  }
+
+  let m;
+  const reType = /\b(?:class|struct|enum(?:\s+class)?|union|namespace)\s+([A-Za-z_]\w*)/g;
+  while ((m = reType.exec(stripped))) add(m[1], m.index);
+
+  const reDefine = /^[ \t]*#[ \t]*define[ \t]+([A-Za-z_]\w*)/gm;
+  while ((m = reDefine.exec(stripped))) add(m[1], m.index);
+
+  /* "Type name", "Type<...> name", "Type *name", "Type &name": variables,
+     parameters and functions. Also catches "int a, b" lists. */
+  const reDecl = /\b([A-Za-z_][\w:]*(?:\s*<[^;{}()]*?>)?)[\s*&]+([A-Za-z_]\w*)\s*(?=[=;,()\[{:)])/g;
+  while ((m = reDecl.exec(stripped))){
+    const type = m[1].split('<')[0].replace(/^std::/, '');
+    if (DECL_SKIP.has(type) && !CPP_KEYWORDS_BLUE.has(type)) continue;
+    if (type === 'return' || type === 'new' || type === 'delete') continue;
+    add(m[2], m.index);
+    reDecl.lastIndex = m.index + m[0].length;
+  }
+
+  return [...names.entries()]
+    .sort((a, b) => {
+      const aBefore = a[1] < cursor ? 0 : 1;
+      const bBefore = b[1] < cursor ? 0 : 1;
+      if (aBefore !== bBefore) return aBefore - bBefore;
+      return a[1] - b[1];
+    })
+    .map(e => e[0]);
+}
+
+/* ==================== CUSTOM SNIPPETS ==================== */
+function loadCustomSnippets(){
+  try {
+    const raw = localStorage.getItem(STORE_SNIPPETS);
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  return [];
+}
+function saveCustomSnippets(list){
+  try { localStorage.setItem(STORE_SNIPPETS, JSON.stringify(list)); } catch(e){}
+}
+function addCustomSnippet(){
+  openModal((card) => {
+    card.appendChild(menuHead('New custom snippet'));
+    const wrap = document.createElement('div');
+    wrap.style.padding = '8px 14px';
+
+    const label = document.createElement('input');
+    label.id = 'snLabel';
+    label.placeholder = 'Label (e.g. main)';
+    label.style.cssText = 'width:100%;padding:8px;margin-bottom:8px;' +
+      'background:var(--panel2);border:1px solid var(--line);' +
+      'border-radius:5px;color:var(--text);font-family:inherit;font-size:14px;';
+    wrap.appendChild(label);
+
+    const text = document.createElement('textarea');
+    text.id = 'snText';
+    text.placeholder = 'Code. Use | for cursor position.';
+    text.style.cssText = 'width:100%;height:120px;padding:8px;' +
+      'background:var(--panel2);border:1px solid var(--line);' +
+      'border-radius:5px;color:var(--text);' +
+      'font-family:ui-monospace,monospace;font-size:13px;';
+    wrap.appendChild(text);
+
+    card.appendChild(wrap);
+
+    card.appendChild(menuItem('Save snippet', () => {
+      const l = label.value.trim();
+      const t = text.value;
+      if (!l || !t) return;
+      const list = loadCustomSnippets();
+      list.push({ label: l, text: t });
+      saveCustomSnippets(list);
+      renderSuggestions();
+    }));
+    card.appendChild(menuItem('Cancel', () => {}));
+
+    setTimeout(() => label.focus(), 50);
+  });
+}
+
+/* ==================== SUGGESTIONS ==================== */
+function currentContext(){
+  const pos = editor.selectionStart;
+  if (pos !== editor.selectionEnd) return { mode:'none' };
+  const before = editor.value.slice(0, pos);
+  const inc = before.match(/#[ \t]*include[ \t]*<([\w./+]*)$/);
+  if (inc) return { mode:'header', word:inc[1], start: pos - inc[1].length };
+  const m = before.match(/[A-Za-z_][A-Za-z0-9_]*$/);
+  const word = m ? m[0] : '';
+  const head = before.slice(0, before.length - word.length);
+  const start = pos - word.length;
+  if ((/\.$/.test(head) && !/\d\.$/.test(head)) || /->$/.test(head))
+    return { mode:'attr', word, start };
+  if (/::$/.test(head)) return { mode:'scope', word, start };
+  if (m) return { mode:'word', word, start };
+  return { mode:'none' };
+}
+function makeChip(label, cls, fn){
+  const d = document.createElement('div');
+  d.className = 'chip' + (cls ? ' ' + cls : '');
+  d.textContent = label;
+  d.setAttribute('role','button');
+  d.addEventListener('click', (e) => { e.preventDefault(); fn(); });
+  return d;
+}
+let renderQueued = false;
+function scheduleRender(){
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => { renderQueued = false; renderSuggestions(); });
+}
+/* Members that are data, not functions: insert without "()". */
+const CPP_FIELDS = new Set(['first', 'second']);
+
+/* Score pool entries against the typed word and add the best as chips. */
+function addScoredChips(frag, pool, word, onPick){
+  const w = word.toLowerCase();
+  const scored = pool
+    .map(([name, cls]) => ({ name, cls, score: fuzzyScore(w, name) }))
+    .filter(x => x.score >= 0)
+    .sort((a, b) => b.score - a.score);
+  const seen = new Set();
+  let made = 0;
+  for (const item of scored){
+    if (made >= 50) break;
+    if (seen.has(item.name)) continue;
+    if (item.name.toLowerCase() === w) continue;
+    seen.add(item.name);
+    const chip = onPick(item.name, item.cls);
+    frag.appendChild(chip);
+    made++;
+  }
+  return made;
+}
+
+function renderSuggestions(){
+  const ctx = currentContext();
+  const frag = document.createDocumentFragment();
+  let made = 0;
+
+  if (ctx.mode === 'header'){
+    made = addScoredChips(frag, CPP_HEADERS.map(h => [h, 'mod']), ctx.word, (name, cls) =>
+      makeChip(name, cls, () => {
+        const end = ctx.start + ctx.word.length;
+        const close = editor.value[end] === '>' ? '' : '>';
+        replaceRange(ctx.start, end, name + close, name.length + 1);
+      }));
+  } else if (ctx.mode === 'attr'){
+    made = addScoredChips(frag, CPP_METHODS.map(m => [m, 'mth']), ctx.word, (name, cls) => {
+      const field = CPP_FIELDS.has(name);
+      const ins = field ? name : name + '()';
+      return makeChip(ins, cls, () => {
+        replaceRange(ctx.start, ctx.start + ctx.word.length, ins, name.length + (field ? 0 : 1));
+      });
+    });
+  } else if (ctx.mode === 'word' || ctx.mode === 'scope'){
+    const pool = [];
+    if (ctx.mode === 'word'){
+      CPP_KEYWORDS_BLUE.forEach(k => pool.push([k, 'kw']));
+      CPP_KEYWORDS_PURPLE.forEach(k => pool.push([k, 'cf']));
+      getUserNames().forEach(k => pool.push([k, 'usr']));
+    }
+    CPP_STD_TYPES.forEach(k => { if (k !== 'std') pool.push([k, 'mod']); });
+    CPP_BUILTINS_SET.forEach(k => { if (k !== 'main') pool.push([k, 'bi']); });
+    if (ctx.mode === 'word') pool.push(['main', 'bi'], ['std', 'mod']);
+    made = addScoredChips(frag, pool, ctx.word, (name, cls) =>
+      makeChip(name, cls, () => {
+        replaceRange(ctx.start, ctx.start + ctx.word.length, name, name.length);
+      }));
+  }
+  if (made === 0){
+    for (const s of loadCustomSnippets())
+      frag.appendChild(makeChip(s.label, 'usr', () => insertSnippet(s.text)));
+    for (const s of SNIPPETS)
+      frag.appendChild(makeChip(s.label, '', () => insertSnippet(s.text)));
+  }
+  suggestBar.textContent = '';
+  suggestBar.appendChild(frag);
+}
+
+/* ==================== SYMBOL BAR ==================== */
+function handleSymbol(s){
+  if (s.a === 'indent') return indent();
+  if (s.a === 'unindent') return unindent();
+  if (s.pair){
+    const pos = editor.selectionStart, v = editor.value;
+    if (pos === editor.selectionEnd && v[pos] === s.pair){
+      focusEditor();
+      editor.setSelectionRange(pos + 1, pos + 1);
+      onEditorChange();
+      return;
+    }
+    return insertRaw(s.t, s.caret);
+  }
+  insertRaw(s.t);
+}
+function buildSymbolBar(){
+  const frag = document.createDocumentFragment();
+  for (const s of SYMBOLS){
+    const d = document.createElement('div');
+    d.className = 'chip';
+    d.textContent = s.l;
+    d.setAttribute('role','button');
+    d.addEventListener('click', (e) => { e.preventDefault(); handleSymbol(s); });
+    frag.appendChild(d);
+  }
+  symbolBar.appendChild(frag);
+}
+
+/* ==================== FILES + TABS ==================== */
+let files = [];
+let activeId = null;
+
+function uid(){ return Math.random().toString(36).slice(2, 10); }
+function activeFile(){
+  return files.find(f => f.id === activeId) || files[0];
+}
+
+function loadFiles(){
+  let loaded = null, active = null;
+  try {
+    loaded = JSON.parse(localStorage.getItem(STORE_FILES) || 'null');
+    active = localStorage.getItem(STORE_ACTIVE);
+  } catch(e){}
+
+  if (Array.isArray(loaded) && loaded.length){
+    files = loaded;
+    activeId = files.some(f => f.id === active) ? active : files[0].id;
+  } else {
+    files = [{ id: uid(), name: 'main.cpp', code: DEFAULT_CODE, stdin: '' }];
+    activeId = files[0].id;
+  }
+}
+
+let saveTimer = null;
+let lastSaveError = 0;
+
+function writeStorage(){
+  try {
+    localStorage.setItem(STORE_FILES, JSON.stringify(files));
+    localStorage.setItem(STORE_ACTIVE, activeId || '');
+    lastSaveError = 0;
+  } catch(e){
+    const now = Date.now();
+    if (now - lastSaveError > 30000){
+      lastSaveError = now;
+      if (e && (e.name === 'QuotaExceededError' || e.code === 22)){
+        showSaveWarning('Storage is full. Download a backup to avoid losing work.');
+      } else {
+        showSaveWarning('Could not save. Browser storage may be blocked.');
+      }
+    }
+  }
+}
+
+function persist(){
+  const f = activeFile();
+  if (f) f.code = editor.value;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(writeStorage, 400);
+}
+
+/* Save right now. Mobile browsers often kill the page without beforeunload. */
+function flushSave(){
+  if (!files.length) return;
+  const f = activeFile();
+  if (f) f.code = editor.value;
+  clearTimeout(saveTimer);
+  writeStorage();
+}
+
+function showSaveWarning(msg){
+  let bar = document.getElementById('saveWarn');
+  if (!bar){
+    bar = document.createElement('div');
+    bar.id = 'saveWarn';
+    bar.style.cssText =
+      'position:fixed;left:0;right:0;bottom:0;background:#a33;color:#fff;' +
+      'padding:8px 12px;font-size:13px;text-align:center;z-index:500;' +
+      'padding-bottom:calc(8px + env(safe-area-inset-bottom));cursor:pointer;';
+    bar.addEventListener('click', () => bar.remove());
+    document.body.appendChild(bar);
+  }
+  bar.textContent = '⚠ ' + msg + ' (tap to dismiss)';
+}
+
+function renderTabs(){
+  const bar = document.getElementById('tabBar');
+  bar.textContent = '';
+  for (const f of files){
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (f.id === activeId ? ' active' : '');
+    const name = document.createElement('span');
+    name.textContent = f.name;
+    tab.appendChild(name);
+
+    if (files.length > 1){
+      const close = document.createElement('span');
+      close.className = 'tabClose';
+      close.textContent = '\u00d7';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTab(f.id);
+      });
+      tab.appendChild(close);
+    }
+    tab.addEventListener('click', () => switchTab(f.id));
+    bar.appendChild(tab);
+  }
+  const add = document.createElement('div');
+  add.className = 'tabAdd';
+  add.textContent = '+';
+  add.addEventListener('click', newTab);
+  bar.appendChild(add);
+}
+
+function switchTab(id){
+  if (id === activeId) return;
+  const f = activeFile();
+  if (f) f.code = editor.value;
+  activeId = id;
+  editor.value = activeFile().code;
+  editor.scrollTop = 0;
+  lastLineCount = -1;
+  lastHighlightedText = null;
+  scheduleHighlight();
+  scheduleRender();
+  renderTabs();
+  persist();
+}
+
+function newTab(){
+  const f = activeFile();
+  if (f) f.code = editor.value;
+  const n = files.length + 1;
+  const nf = { id: uid(), name: 'file' + n + '.cpp', code: '', stdin: '' };
+  files.push(nf);
+  activeId = nf.id;
+  editor.value = '';
+  lastLineCount = -1;
+  lastHighlightedText = null;
+  scheduleHighlight();
+  scheduleRender();
+  renderTabs();
+  persist();
+  focusEditor();
+}
+
+function closeTab(id){
+  if (files.length <= 1) return;
+  const idx = files.findIndex(f => f.id === id);
+  if (idx === -1) return;
+  if (files[idx].code.trim() && !confirm('Close "' + files[idx].name + '"?')) return;
+  files.splice(idx, 1);
+  if (activeId === id){
+    const next = files[Math.min(idx, files.length - 1)];
+    activeId = next.id;
+    editor.value = next.code;
+    lastLineCount = -1;
+    lastHighlightedText = null;
+    scheduleHighlight();
+    scheduleRender();
+  }
+  renderTabs();
+  persist();
+}
+
+function renameActiveTab(){
+  const f = activeFile();
+  if (!f) return;
+  const name = prompt('File name:', f.name);
+  if (!name || !name.trim()) return;
+  f.name = name.trim();
+  renderTabs();
+  persist();
+}
+
+function clearCurrentFile(){
+  if (editor.value.trim() && !confirm('Clear the current file?')) return;
+  editor.value = '';
+  onEditorChange();
+  focusEditor();
+}
+
+/* ==================== CHANGE HANDLER ==================== */
+function onEditorChange(){
+  scheduleHighlight();
+  scheduleRender();
+  persist();
+}
+editor.addEventListener('input', onEditorChange);
+editor.addEventListener('click', scheduleRender);
+editor.addEventListener('keyup', (e) => {
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key))
+    scheduleRender();
+});
+
+/* ==================== UNDO / REDO ==================== */
+document.getElementById('btnUndo').addEventListener('click', () => {
+  focusEditor();
+  try { document.execCommand('undo', false); } catch(e){}
+  onEditorChange();
+});
+document.getElementById('btnRedo').addEventListener('click', () => {
+  focusEditor();
+  try { document.execCommand('redo', false); } catch(e){}
+  onEditorChange();
+});
+
+/* ==================== OUTPUT SHEET ==================== */
+function openSheet(){ sheet.classList.add('open'); scrim.classList.add('show'); }
+function closeSheet(){ sheet.classList.remove('open'); scrim.classList.remove('show'); }
+scrim.addEventListener('click', closeSheet);
+document.getElementById('btnCloseOut').addEventListener('click', closeSheet);
+document.getElementById('btnClearOut').addEventListener('click', () => { outputEl.textContent = ''; });
+
+function appendOut(text, cls){
+  const safe = (typeof text === 'string') ? text : String(text);
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = safe;
+  outputEl.appendChild(span);
+  outputEl.scrollTop = outputEl.scrollHeight;
+}
+function clearOutput(){ outputEl.textContent = ''; }
+
+/* ==================== C++ RUNNER (Web Worker) ==================== */
+/* cpprunner.js runs the program so a stuck loop cannot freeze the UI.
+   Stop = terminate the worker and start a fresh one. */
+const ENGINES = {
+  online:  { badge: 'g++ · online',     label: 'Online — real g++ (full C++, needs internet)' },
+  offline: { badge: 'JSCPP · offline',  label: 'Offline — built-in interpreter (basic C++ only)' },
+};
+const CPP_STDS = ['c++11', 'c++14', 'c++17', 'gnu++20', 'c++23'];
+const DEFAULT_STD = 'gnu++20';
+
+let cppWorker = null;
+let running = false;
+
+function getEngine(){
+  let e = null;
+  try { e = localStorage.getItem(STORE_ENGINE); } catch(_){}
+  return ENGINES[e] ? e : 'online';
+}
+function getStd(){
+  let s = null;
+  try { s = localStorage.getItem(STORE_STD); } catch(_){}
+  return CPP_STDS.includes(s) ? s : DEFAULT_STD;
+}
+function setPref(key, value){
+  try { localStorage.setItem(key, value); } catch(_){}
+  renderEngine();
+}
+function renderEngine(){
+  const e = getEngine();
+  engineBadge.textContent = ENGINES[e].badge + ' ▾';
+  engineBadge.classList.toggle('online', e === 'online');
+  sheetTitle.textContent = 'Output · ' + ENGINES[e].badge;
+}
+
+function showEngineMenu(){
+  openModal((card) => {
+    const cur = getEngine();
+    card.appendChild(menuHead('Run C++ with'));
+    for (const key of Object.keys(ENGINES)){
+      const item = menuItem((key === cur ? '●  ' : '○  ') + ENGINES[key].label, () => setPref(STORE_ENGINE, key));
+      if (key === cur) item.classList.add('sel');
+      card.appendChild(item);
+    }
+    const note = document.createElement('div');
+    note.className = 'mText';
+    note.innerHTML =
+      '<b>Offline</b> runs on your phone with no internet, but it is a small ' +
+      'interpreter: no <code>std::string</code>, <code>vector</code>, classes or templates.<br>' +
+      '<b>Online</b> compiles with real g++ on wandbox.org, so everything works, ' +
+      'but your code is sent to that site and input must be typed before the run.';
+    card.appendChild(note);
+    const std = getStd();
+    card.appendChild(menuHead('C++ standard (online)'));
+    for (const s of CPP_STDS){
+      const item = menuItem((s === std ? '●  ' : '○  ') + '-std=' + s, () => setPref(STORE_STD, s));
+      if (s === std) item.classList.add('sel');
+      card.appendChild(item);
+    }
+    card.appendChild(menuItem('Close', () => {}));
+  });
+}
+
+function setRunButton(){
+  btnRun.disabled = false;
+  btnRun.textContent = running ? '■ Stop' : '▶ Run';
+  btnRun.classList.toggle('stop', running);
+}
+function finishRun(){ running = false; setRunButton(); }
+
+function killWorker(){
+  if (cppWorker){ try { cppWorker.terminate(); } catch(_){} }
+  cppWorker = null;
+}
+
+function ensureWorker(){
+  if (cppWorker) return cppWorker;
+  const w = new Worker('cpprunner.js');
+  w.onmessage = (e) => { if (w === cppWorker) onRunMessage(e.data || {}); };
+  w.onerror = (ev) => {
+    if (w !== cppWorker) return;
+    appendOut('C++ runner failed: ' + ((ev && ev.message) || 'could not start') + '\n', 'err');
+    killWorker();
+    finishRun();
+  };
+  cppWorker = w;
+  return w;
+}
+
+function onRunMessage(m){
+  switch (m.type){
+    case 'out': appendOut(m.text, m.cls); break;
+    case 'done': finishRun(); break;
+  }
+}
+
+function stopRun(){
+  killWorker();
+  appendOut('\nStopped.\n', 'info');
+  finishRun();
+  try { ensureWorker(); } catch(_){}   /* warm up the next run */
+}
+
+/* ---------- stdin ---------- */
+/* Neither engine can pause mid-run for typing, so input is collected first. */
+const READS_INPUT_RE = /\b(?:cin|scanf|getline|getchar|gets|fgets|getc)\b/;
+function readsInput(code){ return READS_INPUT_RE.test(stripCppNoise(code)); }
+
+function askInput(onRun){
+  const f = activeFile();
+  openModal((card) => {
+    card.appendChild(menuHead('Program input (stdin)'));
+    const note = document.createElement('div');
+    note.className = 'mText';
+    note.textContent = onRun
+      ? 'This program reads input. Type everything it will read, in order — ' +
+        'one value per line or separated by spaces.'
+      : 'Saved with this tab and fed to cin / scanf on every run.';
+    card.appendChild(note);
+    const wrap = document.createElement('div');
+    wrap.style.padding = '0 14px 8px';
+    const box = document.createElement('textarea');
+    box.className = 'mInput';
+    box.spellcheck = false;
+    box.setAttribute('autocapitalize', 'off');
+    box.setAttribute('autocorrect', 'off');
+    box.value = (f && f.stdin) || '';
+    wrap.appendChild(box);
+    card.appendChild(wrap);
+    function save(){
+      if (f){ f.stdin = box.value; persist(); }
+    }
+    if (onRun) card.appendChild(menuItem('▶  Run with this input', () => { save(); onRun(box.value); }));
+    else card.appendChild(menuItem('Save input', save));
+    card.appendChild(menuItem('Cancel', () => {}));
+    setTimeout(() => box.focus(), 50);
+  });
+}
+
+function runCode(){
+  if (running){ stopRun(); return; }
+  const code = editor.value;
+  if (!code.trim()){
+    openSheet(); clearOutput();
+    appendOut('Nothing to run.\n', 'info');
+    return;
+  }
+  if (readsInput(code)) askInput((input) => startRun(code, input));
+  else startRun(code, '');
+}
+
+function startRun(code, stdin){
+  running = true;
+  setRunButton();
+  openSheet(); clearOutput();
+  let w;
+  try { w = ensureWorker(); }
+  catch(err){
+    appendOut('Cannot start the C++ runner: ' + ((err && err.message) || err) + '\n', 'err');
+    finishRun();
+    return;
+  }
+  const engine = getEngine();
+  if (engine === 'offline') appendOut('Running with the offline interpreter...\n', 'info');
+  if (stdin){
+    const shown = stdin.length > 200 ? stdin.slice(0, 200) + '…' : stdin;
+    appendOut('[input] ' + shown.replace(/\n+$/, '').replace(/\n/g, ' ⏎ ') + '\n', 'info');
+  }
+  w.postMessage({ type: 'run', engine: engine, code: code, stdin: stdin, std: getStd() });
+}
+btnRun.addEventListener('click', runCode);
+document.getElementById('btnKeyboard').addEventListener('click', () => {
+  editor.blur(); window.scrollTo(0, 0);
+});
+document.getElementById('brand').addEventListener('click', showEngineMenu);
+
+/* ==================== SEARCH & REPLACE ==================== */
+function openSearch(){
+  openModal((card) => {
+    card.appendChild(menuHead('Find & replace'));
+    const wrap = document.createElement('div');
+    wrap.style.padding = '8px 14px';
+
+    const findInput = document.createElement('input');
+    findInput.placeholder = 'Find...';
+    findInput.style.cssText = 'width:100%;padding:8px;margin-bottom:8px;' +
+      'background:var(--panel2);border:1px solid var(--line);' +
+      'border-radius:5px;color:var(--text);font-family:inherit;font-size:14px;';
+    wrap.appendChild(findInput);
+
+    const replInput = document.createElement('input');
+    replInput.placeholder = 'Replace with...';
+    replInput.style.cssText = 'width:100%;padding:8px;' +
+      'background:var(--panel2);border:1px solid var(--line);' +
+      'border-radius:5px;color:var(--text);font-family:inherit;font-size:14px;';
+    wrap.appendChild(replInput);
+    card.appendChild(wrap);
+
+    function doReplaceAll(){
+      const q = findInput.value;
+      const r = replInput.value;
+      if (!q) return;
+      const text = editor.value;
+      const replaced = text.split(q).join(r);
+      if (replaced !== text){
+        editor.value = replaced;
+        lastHighlightedText = null;
+        onEditorChange();
+      }
+      closeModal();
+    }
+    function doFindNext(){
+      const q = findInput.value;
+      if (!q) return;
+      const text = editor.value;
+      const start = editor.selectionEnd;
+      let idx = text.indexOf(q, start);
+      if (idx === -1) idx = text.indexOf(q, 0);
+      if (idx === -1) return;
+      focusEditor();
+      editor.setSelectionRange(idx, idx + q.length);
+      // Scroll selection into view roughly
+      const lines = text.slice(0, idx).split('\n').length - 1;
+      const lineHeight = parseFloat(getComputedStyle(editor).lineHeight) || 24;
+      editor.scrollTop = Math.max(0, lines * lineHeight - editor.clientHeight / 2);
+      scheduleHighlight();
+    }
+
+    card.appendChild(menuItem('Find next', doFindNext));
+    card.appendChild(menuItem('Replace all in current tab', doReplaceAll));
+    card.appendChild(menuItem('Close', () => {}));
+
+    setTimeout(() => findInput.focus(), 50);
+  });
+}
+
+/* ==================== WORKSPACE IMPORT / EXPORT ==================== */
+function exportWorkspace(){
+  const f = activeFile();
+  if (f) f.code = editor.value;
+  const payload = {
+    version: 1,
+    exported: new Date().toISOString(),
+    files: files.map(f => ({ name: f.name, code: f.code, stdin: f.stdin || '' })),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cppphone-workspace-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function importWorkspace(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = () => {
+    const f = input.files[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024){ alert('File too large.'); return; }
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const data = JSON.parse(String(r.result));
+        if (!data || !Array.isArray(data.files)) throw new Error('Invalid format');
+        if (data.files.length > 100) throw new Error('Too many files');
+        const incoming = [];
+        for (const item of data.files){
+          if (typeof item.name !== 'string' || typeof item.code !== 'string') continue;
+          if (item.name.length > 100 || item.code.length > 1024 * 1024) continue;
+          const stdin = typeof item.stdin === 'string' ? item.stdin.slice(0, 1024 * 1024) : '';
+          incoming.push({ id: uid(), name: item.name, code: item.code, stdin: stdin });
+        }
+        if (!incoming.length) throw new Error('No valid files found');
+        if (!confirm('Import ' + incoming.length + ' file(s)? They will be added as new tabs.')) return;
+        const cur = activeFile();
+        if (cur) cur.code = editor.value;
+        files = files.concat(incoming);
+        activeId = incoming[0].id;
+        editor.value = incoming[0].code;
+        lastLineCount = -1;
+        lastHighlightedText = null;
+        scheduleHighlight();
+        scheduleRender();
+        renderTabs();
+        persist();
+      } catch(e){
+        alert('Import failed: ' + (e.message || e));
+      }
+    };
+    r.readAsText(f);
+  };
+  input.click();
+}
+
+/* ==================== FILE IMPORT ==================== */
+const MAX_IMPORT_BYTES = 512 * 1024;
+const ALLOWED_EXT = ['.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.txt'];
+
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files && fileInput.files[0];
+  fileInput.value = '';
+  if (!f) return;
+
+  const name = f.name || 'imported.cpp';
+  const dot = name.lastIndexOf('.');
+  const ext = dot >= 0 ? name.slice(dot).toLowerCase() : '';
+  if (!ALLOWED_EXT.includes(ext)){
+    alert('Only ' + ALLOWED_EXT.join(', ') + ' files can be imported.');
+    return;
+  }
+  if (f.size > MAX_IMPORT_BYTES){
+    alert('File is too large. Limit is ' + Math.round(MAX_IMPORT_BYTES/1024) + ' KB.');
+    return;
+  }
+  const r = new FileReader();
+  r.onerror = () => alert('Could not read the file.');
+  r.onload = () => {
+    const text = String(r.result || '');
+    if (text.indexOf('\u0000') !== -1){
+      alert('This does not look like a text file.');
+      return;
+    }
+    const nf = { id: uid(), name: name, code: text, stdin: '' };
+    files.push(nf);
+    activeId = nf.id;
+    editor.value = nf.code;
+    lastLineCount = -1;
+    lastHighlightedText = null;
+    scheduleHighlight();
+    scheduleRender();
+    renderTabs();
+    persist();
+    editor.scrollTop = 0;
+  };
+  r.readAsText(f);
+});
+
+/* ==================== THEME + FONT ==================== */
+function applyTheme(){
+  const t = localStorage.getItem(STORE_THEME) || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = t === 'dark' ? '#1e1e1e' : '#ffffff';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(STORE_THEME, next);
+  applyTheme();
+}
+function applyFont(){
+  const fs = parseInt(localStorage.getItem(STORE_FONT) || '16', 10);
+  const safe = Math.max(16, isNaN(fs) ? 16 : fs);
+  document.documentElement.style.setProperty('--fs', safe + 'px');
+}
+function cycleFont(){
+  const sizes = [16, 17, 18, 20, 22];
+  let cur = parseInt(localStorage.getItem(STORE_FONT) || '16', 10);
+  let idx = sizes.indexOf(cur); if (idx === -1) idx = 0;
+  const next = sizes[(idx + 1) % sizes.length];
+  localStorage.setItem(STORE_FONT, String(next));
+  applyFont();
+}
+
+/* ==================== MENU / MODAL ==================== */
+function openModal(builder){ modalCard.textContent = ''; builder(modalCard); modal.classList.add('open'); }
+function closeModal(){ modal.classList.remove('open'); }
+modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+function menuItem(label, fn){
+  const d = document.createElement('div');
+  d.className = 'mItem'; d.textContent = label;
+  d.addEventListener('click', () => { closeModal(); setTimeout(fn, 10); });
+  return d;
+}
+function menuHead(text){
+  const d = document.createElement('div');
+  d.className = 'mHead'; d.textContent = text; return d;
+}
+
+function showMenu(){
+  openModal((card) => {
+    card.appendChild(menuItem('➕  New tab', newTab));
+    card.appendChild(menuItem('✏️  Rename current tab', renameActiveTab));
+    card.appendChild(menuItem('🧹  Clear current file', clearCurrentFile));
+    card.appendChild(menuItem('🔍  Find & replace', openSearch));
+    card.appendChild(menuItem('⭐  Add custom snippet', addCustomSnippet));
+    card.appendChild(menuItem('⌨️  Program input (stdin)…', () => askInput(null)));
+    card.appendChild(menuItem('⚙️  Engine & C++ standard…', showEngineMenu));
+    card.appendChild(menuItem('📂  Open a .cpp file', () => fileInput.click()));
+    card.appendChild(menuItem('💾  Download current file', downloadCurrent));
+    card.appendChild(menuItem('📤  Export workspace (.json)', exportWorkspace));
+    card.appendChild(menuItem('📥  Import workspace (.json)', importWorkspace));
+    card.appendChild(menuItem('🧹  Clear output', clearOutput));
+    card.appendChild(menuItem('🌗  Toggle light / dark theme', toggleTheme));
+    card.appendChild(menuItem('🔠  Cycle editor font size', cycleFont));
+    card.appendChild(menuHead('Examples (☁ = online engine only)'));
+    for (const name of Object.keys(EXAMPLES)){
+      const mark = EXAMPLES[name].online ? '☁  ' : '📘  ';
+      card.appendChild(menuItem(mark + name, () => loadExample(name)));
+    }
+    card.appendChild(menuHead('Help'));
+    card.appendChild(menuItem('ℹ️  How to use', showHelp));
+  });
+}
+
+function loadExample(name){
+  const ex = EXAMPLES[name]; if (!ex) return;
+  const f = activeFile();
+  if (f && editor.value.trim() && !confirm('Replace "' + f.name + '" with the "' + name + '" example?')) return;
+  editor.value = ex.code;
+  if (f) f.stdin = ex.stdin || '';
+  lastHighlightedText = null;
+  onEditorChange();
+  editor.scrollTop = 0;
+  if (ex.online && getEngine() === 'offline'){
+    openSheet(); clearOutput();
+    appendOut('This example uses std::string / the STL / classes, which the offline ' +
+      'interpreter cannot run. Tap "C++Phone" at the top and pick Online.\n', 'info');
+  }
+}
+
+function downloadCurrent(){
+  const f = activeFile();
+  const filename = (f && f.name) ? f.name : 'main.cpp';
+  const blob = new Blob([editor.value], { type:'text/x-c++src' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function showHelp(){
+  openModal((card) => {
+    card.appendChild(menuHead('How to use CppPhone'));
+    const body = document.createElement('div');
+    body.className = 'mText';
+    body.innerHTML =
+      '<p><b>▶ Run</b> runs <code>main()</code> in the background, so the editor ' +
+      'never freezes. While code runs the button turns into <b>■ Stop</b>: tap it ' +
+      'to kill a stuck loop.</p>' +
+      '<p><b>Two engines</b> — tap <b>C++Phone</b> at the top to switch:<br>' +
+      '• <b>Online (g++)</b>: real compiler on wandbox.org. Full C++ and the STL ' +
+      '(<code>string</code>, <code>vector</code>, <code>map</code>, classes…). Needs internet; ' +
+      'your code is sent to wandbox.org.<br>' +
+      '• <b>Offline (JSCPP)</b>: a C++ interpreter written in JavaScript that runs ' +
+      'on your phone. Works with no signal, but only basic C++: <code>int</code>/<code>double</code>/' +
+      '<code>char</code>, arrays, pointers, functions, <code>cin</code>/<code>cout</code>, ' +
+      '<code>printf</code>, <code>&lt;cmath&gt;</code>, <code>&lt;cstring&gt;</code>. ' +
+      'No <code>std::string</code>, STL, classes or templates.</p>' +
+      '<p><b>Input:</b> if your code uses <code>cin</code> or <code>scanf</code>, ' +
+      'Run first asks for the input. Type all of it up front. ' +
+      '☰ → Program input edits it any time; it is saved per tab.</p>' +
+      '<p><b>Tabs:</b> tap <b>+</b> to open a new file, tap a tab to switch, ' +
+      'tap × to close. Everything auto-saves. Each tab is its own program.</p>' +
+      '<p><b>Type faster:</b><br>' +
+      '• Suggestions appear as you type — tap to insert.<br>' +
+      '• Not mid-word? The bar shows ready-made and custom snippets (try <code>main</code>).<br>' +
+      '• After <code>.</code> or <code>-&gt;</code> you get member functions; after ' +
+      '<code>std::</code> you get library names; after <code>#include &lt;</code> headers.<br>' +
+      '• <code>⇥</code> indents, <code>⇤</code> unindents.<br>' +
+      '• Type <code>{</code> then Enter — the block opens and <code>}</code> lands on its own line.</p>' +
+      '<p><b>Undo / Redo</b> buttons are in the top bar (↶ ↷).</p>' +
+      '<p><b>Backup:</b> ☰ → Export workspace saves all tabs as one .json.</p>' +
+      '<p><b>Shortcut:</b> Ctrl/Cmd + Enter runs the code.</p>';
+    card.appendChild(body);
+    card.appendChild(menuItem('Close', () => {}));
+  });
+}
+
+document.getElementById('btnMenu').addEventListener('click', showMenu);
+
+/* ==================== INIT ==================== */
+(function init(){
+  applyTheme();
+  applyFont();
+  buildSymbolBar();
+  renderEngine();
+  loadFiles();
+  editor.value = activeFile().code;
+  renderTabs();
+  scheduleHighlight();
+  renderSuggestions();
+  updateViewport();
+  setTimeout(() => { try { ensureWorker(); } catch(e){} }, 1500);
+})();
+
+window.addEventListener('beforeunload', flushSave);
+window.addEventListener('pagehide', flushSave);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushSave();
+});
+
+/* ==================== SERVICE WORKER ==================== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { scope: './' })
+      .then(() => console.log('[CppPhone] Service worker active — offline ready.'))
+      .catch((err) => console.warn('[CppPhone] SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
